@@ -254,7 +254,7 @@
             </div>
             
             <div class="success" id="success-message">
-                <i class="fas fa-check-circle"></i> <span id="success-text">IMEI data retrieved successfully (simulation)</span>
+                <i class="fas fa-check-circle"></i> <span id="success-text">IMEI data retrieved successfully</span>
             </div>
             
             <div class="info-cards">
@@ -298,16 +298,16 @@
             <div class="api-info">
                 <h3>IMEI Lookup Information</h3>
                 <ul>
-                    <li><i class="fas fa-info-circle"></i> This tool simulates IMEI lookup functionality</li>
-                    <li><i class="fas fa-key"></i> API Key: 9a2c224b-1075-464d-bb40-319cf5610ee8</li>
-                    <li><i class="fas fa-exclamation-triangle"></i> Current status: API connection issues detected</li>
+                    <li><i class="fas fa-info-circle"></i> This tool uses the imeicheck.net API</li>
+                    <li><i class="fas fa-key"></i> API requests are made directly from your browser</li>
+                    <li><i class="fas fa-database"></i> Results come from the imeicheck.net database</li>
                     <li><i class="fas fa-lock"></i> IMEI numbers are unique identifiers - use responsibly</li>
                 </ul>
             </div>
         </div>
         
         <div class="footer">
-            <p>Powered by imei.info API (simulation) | API issues detected</p>
+            <p>Powered by imeicheck.net API | API Key: d3gCmOIM11iRllZdaMlk9Ev0Zr3B7RtAQwmwKyla6400fbca</p>
         </div>
     </div>
 
@@ -319,54 +319,13 @@
             const errorMessage = document.getElementById('error-message');
             const successMessage = document.getElementById('success-message');
             
-            // Show API error on load
-            errorMessage.style.display = 'block';
+            // Your imeicheck.net API key
+            const apiKey = 'd3gCmOIM11iRllZdaMlk9Ev0Zr3B7RtAQwmwKyla6400fbca';
+            const baseUrl = 'https://api.imeicheck.net/';
             
-            // Sample device database for simulation
-            const deviceDatabase = {
-                '123456789012345': {
-                    model: 'iPhone 13 Pro',
-                    manufacturer: 'Apple Inc.',
-                    serial: 'C39PJ5R6HXJ8',
-                    releaseDate: 'September 24, 2021',
-                    network: '5G, LTE, GSM, CDMA',
-                    specs: 'A15 Bionic, 6GB RAM, 128GB-1TB'
-                },
-                '354809097635856': {
-                    model: 'Galaxy S21 Ultra',
-                    manufacturer: 'Samsung Electronics',
-                    serial: 'R58M41BEJ2X',
-                    releaseDate: 'January 29, 2021',
-                    network: '5G, LTE, GSM, CDMA',
-                    specs: 'Exynos 2100, 12GB RAM, 128GB-512GB'
-                },
-                '490154203237518': {
-                    model: 'Pixel 6 Pro',
-                    manufacturer: 'Google LLC',
-                    serial: '9A31B5C7D2E0',
-                    releaseDate: 'October 28, 2021',
-                    network: '5G, LTE, GSM, CDMA',
-                    specs: 'Google Tensor, 12GB RAM, 128GB-512GB'
-                },
-                '860125045987312': {
-                    model: 'Redmi Note 10 Pro',
-                    manufacturer: 'Xiaomi Inc.',
-                    serial: 'M2K9B7D4F6G8',
-                    releaseDate: 'March 4, 2021',
-                    network: '4G LTE, GSM',
-                    specs: 'Snapdragon 732G, 6GB RAM, 64GB-128GB'
-                }
-            };
-            
-            // Default device info if IMEI not in database
-            const defaultDevice = {
-                model: 'Unknown Model',
-                manufacturer: 'Unknown Manufacturer',
-                serial: 'Not available',
-                releaseDate: 'Not available',
-                network: 'Not available',
-                specs: 'Not available'
-            };
+            // Initially hide error message
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
             
             lookupBtn.addEventListener('click', function() {
                 const imei = imeiInput.value.trim();
@@ -384,26 +343,125 @@
                 // Show loading
                 loading.style.display = 'block';
                 
-                // Simulate API call with timeout
-                setTimeout(() => {
-                    // Get device info from database or use default
-                    const deviceInfo = deviceDatabase[imei] || defaultDevice;
+                // Make API request to imeicheck.net
+                fetchImeiData(imei);
+            });
+            
+            async function fetchImeiData(imei) {
+                try {
+                    // Using a proxy to avoid CORS issues
+                    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                    const apiUrl = `${baseUrl}?key=${apiKey}&imei=${imei}`;
                     
-                    // Update the UI with device information
-                    document.getElementById('model').textContent = deviceInfo.model;
-                    document.getElementById('manufacturer').textContent = deviceInfo.manufacturer;
-                    document.getElementById('serial').textContent = deviceInfo.serial;
-                    document.getElementById('release-date').textContent = deviceInfo.releaseDate;
-                    document.getElementById('network').textContent = deviceInfo.network;
-                    document.getElementById('specs').textContent = deviceInfo.specs;
+                    const response = await fetch(proxyUrl + apiUrl, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
                     
+                    if (!response.ok) {
+                        throw new Error(`API error: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success' || data.model) {
+                        displayDeviceInfo(data);
+                        showSuccess('Device information retrieved successfully');
+                    } else {
+                        throw new Error(data.message || 'Unknown error from API');
+                    }
+                } catch (error) {
+                    console.error('IMEI lookup failed:', error);
+                    showError('IMEI lookup failed: ' + error.message);
+                    
+                    // Fallback to simulation mode
+                    simulateImeiLookup(imei);
+                } finally {
                     // Hide loading
                     loading.style.display = 'none';
-                    
-                    // Show success message (simulation)
-                    showSuccess('Device information retrieved (simulation mode)');
-                }, 1500);
-            });
+                }
+            }
+            
+            function displayDeviceInfo(deviceInfo) {
+                // Update the UI with device information from API
+                document.getElementById('model').textContent = deviceInfo.model || deviceInfo.model_name || 'Not available';
+                document.getElementById('manufacturer').textContent = deviceInfo.manufacturer || deviceInfo.brand || 'Not available';
+                document.getElementById('serial').textContent = deviceInfo.serial || deviceInfo.sn || 'Not available';
+                document.getElementById('release-date').textContent = deviceInfo.release_date || deviceInfo.releaseDate || 'Not available';
+                document.getElementById('network').textContent = deviceInfo.network_technology || deviceInfo.network || 'Not available';
+                
+                // Build specifications text
+                let specs = '';
+                if (deviceInfo.dimensions) specs += `Dimensions: ${deviceInfo.dimensions}\n`;
+                if (deviceInfo.weight) specs += `Weight: ${deviceInfo.weight}\n`;
+                if (deviceInfo.display_type || deviceInfo.display) specs += `Display: ${deviceInfo.display_type || deviceInfo.display}\n`;
+                if (deviceInfo.os) specs += `OS: ${deviceInfo.os}`;
+                
+                document.getElementById('specs').textContent = specs || 'Not available';
+            }
+            
+            function simulateImeiLookup(imei) {
+                // Sample device database for simulation
+                const deviceDatabase = {
+                    '123456789012345': {
+                        model: 'iPhone 13 Pro',
+                        manufacturer: 'Apple Inc.',
+                        serial: 'C39PJ5R6HXJ8',
+                        releaseDate: 'September 24, 2021',
+                        network: '5G, LTE, GSM, CDMA',
+                        specs: 'A15 Bionic, 6GB RAM, 128GB-1TB'
+                    },
+                    '354809097635856': {
+                        model: 'Galaxy S21 Ultra',
+                        manufacturer: 'Samsung Electronics',
+                        serial: 'R58M41BEJ2X',
+                        releaseDate: 'January 29, 2021',
+                        network: '5G, LTE, GSM, CDMA',
+                        specs: 'Exynos 2100, 12GB RAM, 128GB-512GB'
+                    },
+                    '490154203237518': {
+                        model: 'Pixel 6 Pro',
+                        manufacturer: 'Google LLC',
+                        serial: '9A31B5C7D2E0',
+                        releaseDate: 'October 28, 2021',
+                        network: '5G, LTE, GSM, CDMA',
+                        specs: 'Google Tensor, 12GB RAM, 128GB-512GB'
+                    },
+                    '860125045987312': {
+                        model: 'Redmi Note 10 Pro',
+                        manufacturer: 'Xiaomi Inc.',
+                        serial: 'M2K9B7D4F6G8',
+                        releaseDate: 'March 4, 2021',
+                        network: '4G LTE, GSM',
+                        specs: 'Snapdragon 732G, 6GB RAM, 64GB-128GB'
+                    }
+                };
+                
+                // Default device info if IMEI not in database
+                const defaultDevice = {
+                    model: 'Unknown Model',
+                    manufacturer: 'Unknown Manufacturer',
+                    serial: 'Not available',
+                    releaseDate: 'Not available',
+                    network: 'Not available',
+                    specs: 'Not available'
+                };
+                
+                // Get device info from database or use default
+                const deviceInfo = deviceDatabase[imei] || defaultDevice;
+                
+                // Update the UI with device information
+                document.getElementById('model').textContent = deviceInfo.model;
+                document.getElementById('manufacturer').textContent = deviceInfo.manufacturer;
+                document.getElementById('serial').textContent = deviceInfo.serial;
+                document.getElementById('release-date').textContent = deviceInfo.releaseDate;
+                document.getElementById('network').textContent = deviceInfo.network;
+                document.getElementById('specs').textContent = deviceInfo.specs;
+                
+                // Show simulation message
+                showSuccess('Device information retrieved (simulation mode)');
+            }
             
             function showError(message) {
                 document.getElementById('error-text').textContent = message;
@@ -426,7 +484,7 @@
             }
             
             // Add a sample IMEI on load for demo purposes
-            imeiInput.value = '123456789012345';
+            imeiInput.value = '354809097635856';
         });
     </script>
 </body>
