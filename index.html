@@ -304,7 +304,7 @@
             const errorMessage = document.getElementById('error-message');
             
             // Your imei.info API key
-            const apiKey = '9a2c224b-1075-464d-bb40-319cf5610ee8';
+            const apiKey = 'd3gCmOIM11iRllZdaMlk9Ev0Zr3B7RtAQwmwKyla6400fbca';
             
             lookupBtn.addEventListener('click', function() {
                 const imei = imeiInput.value.trim();
@@ -329,7 +329,7 @@
                 try {
                     // Using a proxy to avoid CORS issues
                     const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                    const apiUrl = `https://api.imei.info/api/device?key=${apiKey}&imei=${imei}`;
+                    const apiUrl = `https://api.imeicheck.net/`;
                     
                     const response = await fetch(proxyUrl + apiUrl, {
                         headers: {
